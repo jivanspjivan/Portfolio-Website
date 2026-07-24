@@ -340,6 +340,7 @@ h1 em, .about h2 em { color: var(--accent); font-style: normal; }
   .capability-grid { grid-template-columns: 1fr; }.capability { min-height: auto; background: none; }.capability::before, .capability + .capability::after { display: none; }.capability + .capability { border-left: 0; border-top: 1px solid var(--line); }
   .about { grid-template-columns: 1fr; gap: 35px; }.contact-grid { grid-template-columns: 1fr; gap: 50px; }
   .experience-item { grid-template-columns: 1fr; gap: 18px; }
+  .timeline-marker { display: none; }
   .contact-submit-arrow { display: none; }
   .email-card { animation: none; }
   .contact-form input, .contact-form textarea { background: #141a1e; border-radius: 5px; backdrop-filter: none; }
