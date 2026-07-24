@@ -122,6 +122,11 @@ app.use((error, _req, res, _next) => {
 initializeDatabase()
   .then(() => app.listen(port, () => console.log(`Portfolio API running on port ${port}`)))
   .catch((error) => {
-    console.error("Database initialization failed:", error.message);
+    const detail =
+      error.message ||
+      error.errors?.map((item) => item.message).join("; ") ||
+      error.code ||
+      "Unknown database connection error";
+    console.error("Database initialization failed:", detail);
     process.exit(1);
   });

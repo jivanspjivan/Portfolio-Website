@@ -1,12 +1,32 @@
-import { neon } from "@neondatabase/serverless";
+import pg from "pg";
 
+const { Pool } = pg;
+let pool;
 let sql;
 
 export function database() {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is not configured");
   }
-  sql ??= neon(process.env.DATABASE_URL);
+
+  if (!pool) {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: 5,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 10_000,
+    });
+  }
+
+  sql ??= async (strings, ...values) => {
+    const text = strings.reduce(
+      (query, part, index) => query + part + (index < values.length ? `$${index + 1}` : ""),
+      "",
+    );
+    const result = await pool.query(text, values);
+    return result.rows;
+  };
+
   return sql;
 }
 
@@ -43,4 +63,3 @@ export async function initializeDatabase() {
     )
   `;
 }
-
