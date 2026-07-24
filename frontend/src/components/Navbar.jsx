@@ -17,6 +17,29 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("top");
   const lastScrollY = useRef(0);
+  const navbarRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    function closeOutside(event) {
+      if (navbarRef.current && !navbarRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+
+    function closeWithEscape(event) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeWithEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeWithEscape);
+    };
+  }, [open]);
 
   useEffect(() => {
     function handleScroll() {
@@ -50,7 +73,10 @@ export default function Navbar() {
   }, [open]);
 
   return (
-    <header className={`nav-wrap ${hidden ? "nav-hidden" : ""} ${scrolled ? "nav-scrolled" : ""}`}>
+    <header
+      ref={navbarRef}
+      className={`nav-wrap ${hidden ? "nav-hidden" : ""} ${scrolled ? "nav-scrolled" : ""}`}
+    >
       <nav className="nav container">
         <Logo />
         <button

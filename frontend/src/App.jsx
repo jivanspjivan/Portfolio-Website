@@ -13,6 +13,8 @@ export default function App() {
     const key = "portfolio-visit-recorded";
 
     if (!sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, "pending");
+
       fetch("/api/visit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -22,8 +24,11 @@ export default function App() {
           screen: `${window.screen.width}x${window.screen.height}`,
         }),
       })
-        .then(() => sessionStorage.setItem(key, "true"))
-        .catch(() => {});
+        .then((response) => {
+          if (!response.ok) throw new Error("Visit could not be recorded");
+          sessionStorage.setItem(key, "true");
+        })
+        .catch(() => sessionStorage.removeItem(key));
     }
   }, []);
 

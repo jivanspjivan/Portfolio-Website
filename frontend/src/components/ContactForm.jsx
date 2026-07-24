@@ -26,8 +26,23 @@ export default function ContactForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Something went wrong.");
+      const responseText = await response.text();
+      let result = {};
+
+      if (responseText) {
+        try {
+          result = JSON.parse(responseText);
+        } catch {
+          result = {};
+        }
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          result.message || `The message could not be sent. Please try again (${response.status}).`,
+        );
+      }
+
       form.reset();
       setState({
         status: "success",
