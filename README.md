@@ -28,7 +28,7 @@ PostgreSQL.
 - Automatic table creation during startup
 - Contact-form validation with Zod
 - Visitor device, browser, operating-system, referrer, and screen detection
-- Location capture from Vercel or Cloudflare request headers
+- Approximate city and coordinate lookup with hosting-header fallback
 - SHA-256 visitor IP hashing
 - Optional raw IP storage
 - Helmet security headers
@@ -308,13 +308,22 @@ privacy policy.
 
 ## Geolocation behavior
 
-The API does not send visitor IP addresses to a third-party location service. It reads
-geolocation metadata supplied by supported hosting providers:
+The API first reads geolocation metadata supplied by supported hosting providers:
 
 - Vercel `x-vercel-ip-*` headers
 - Cloudflare `cf-ipcountry`
 
-Location fields will normally be empty during local development.
+When these headers do not contain city and coordinate data, the backend performs a server-side
+lookup through `ipwho.is`. The lookup:
+
+- Runs only for valid public IP addresses
+- Has a two-second timeout
+- Does not block visitor insertion when it fails
+- Preserves any location values already supplied by the hosting provider
+- Falls back to `null` values when no location is available
+
+Local and private IP addresses are not sent to the provider, so location fields normally remain
+empty during local development.
 
 ## Troubleshooting
 

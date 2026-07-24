@@ -1,5 +1,6 @@
 import "dotenv/config";
 import crypto from "node:crypto";
+import net from "node:net";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -45,6 +46,81 @@ function locationFromHeaders(req) {
   };
 }
 
+function isPublicIp(ip) {
+  const version = net.isIP(ip);
+  if (!version) return false;
+
+  if (version === 4) {
+    const [first, second] = ip.split(".").map(Number);
+    return !(
+      first === 0 ||
+      first === 10 ||
+      first === 127 ||
+      (first === 169 && second === 254) ||
+      (first === 172 && second >= 16 && second <= 31) ||
+      (first === 192 && second === 168)
+    );
+  }
+
+  const normalized = ip.toLowerCase();
+  return !(
+    normalized === "::1" ||
+    normalized.startsWith("fc") ||
+    normalized.startsWith("fd") ||
+    normalized.startsWith("fe80:")
+  );
+}
+
+function coordinate(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+async function visitorLocation(req, ip) {
+  const fallback = locationFromHeaders(req);
+
+  if (
+    (fallback.city && fallback.latitude !== null && fallback.longitude !== null) ||
+    !isPublicIp(ip)
+  ) {
+    return fallback;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 2_000);
+
+  try {
+    const fields = "success,country_code,region,city,latitude,longitude";
+    const response = await fetch(
+      `https://ipwho.is/${encodeURIComponent(ip)}?fields=${fields}`,
+      {
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      },
+    );
+
+    if (!response.ok) return fallback;
+
+    const location = await response.json();
+    if (!location.success) return fallback;
+
+    return {
+      country: fallback.country || location.country_code || null,
+      region: fallback.region || location.region || null,
+      city: fallback.city || location.city || null,
+      latitude: fallback.latitude ?? coordinate(location.latitude),
+      longitude: fallback.longitude ?? coordinate(location.longitude),
+    };
+  } catch (error) {
+    if (error.name !== "AbortError") {
+      console.warn("Visitor geolocation lookup failed:", error.message);
+    }
+    return fallback;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function headerText(value) {
   return Array.isArray(value) ? value[0] : value || null;
 }
@@ -69,7 +145,7 @@ app.post("/api/visit", async (req, res, next) => {
     const input = visitSchema.parse(req.body);
     const ip = clientIp(req);
     const agent = new UAParser(headerText(req.headers["user-agent"]) || "").getResult();
-    const location = locationFromHeaders(req);
+    const location = await visitorLocation(req, ip);
     const db = database();
 
     await db`
