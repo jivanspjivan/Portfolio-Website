@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight, CheckCircle2, LoaderCircle, X } from "lucide-react";
+import { apiUrl } from "../config/api";
 
 export default function ContactForm() {
   const [state, setState] = useState({ status: "idle", message: "" });
@@ -21,7 +22,7 @@ export default function ContactForm() {
     const data = Object.fromEntries(new FormData(form));
 
     try {
-      const response = await fetch("/api/contact", {
+      const response = await fetch(apiUrl("/api/contact"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -40,6 +41,12 @@ export default function ContactForm() {
       if (!response.ok) {
         throw new Error(
           result.message || `The message could not be sent. Please try again (${response.status}).`,
+        );
+      }
+
+      if (!response.headers.get("content-type")?.includes("application/json")) {
+        throw new Error(
+          "The backend returned an unexpected response. Check the frontend API URL.",
         );
       }
 
@@ -91,6 +98,7 @@ export default function ContactForm() {
             name="message"
             rows="5"
             placeholder="Tell me about the role, project, or problem..."
+            minLength="10"
             maxLength="3000"
           />
         </label>

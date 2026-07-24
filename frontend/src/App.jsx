@@ -7,6 +7,7 @@ import Footer from "./components/Footer";
 import Hero from "./components/Hero";
 import Navbar from "./components/Navbar";
 import ProjectsSection from "./components/ProjectsSection";
+import { apiUrl } from "./config/api";
 
 export default function App() {
   useEffect(() => {
@@ -15,7 +16,16 @@ export default function App() {
     if (!sessionStorage.getItem(key)) {
       sessionStorage.setItem(key, "pending");
 
-      fetch("/api/visit", {
+      let visitUrl;
+
+      try {
+        visitUrl = apiUrl("/api/visit");
+      } catch {
+        sessionStorage.removeItem(key);
+        return;
+      }
+
+      fetch(visitUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

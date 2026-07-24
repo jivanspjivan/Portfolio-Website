@@ -108,6 +108,21 @@ not currently consumed by the API.
 
 Never commit `backend/.env`.
 
+Create `frontend/.env` when the frontend and backend run on different origins:
+
+```env
+VITE_API_URL=http://localhost:3001
+```
+
+For production, set this to the deployed backend origin:
+
+```env
+VITE_API_URL=https://your-backend-service.onrender.com
+```
+
+Vite environment variables are included at build time. After changing `VITE_API_URL` on a
+hosting provider, rebuild and redeploy the frontend.
+
 ## Local development
 
 ### 1. Start the backend
